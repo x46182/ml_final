@@ -1,0 +1,108 @@
+---
+title: "Prediction Assignment"
+author: "x46182"
+date: "September 17, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+```
+
+```{r load, cache= T, echo = F}
+setwd('C:/Users/Trent/Desktop/Data Science Specialization/Course 8 - ML/Final_Project')
+load('ml_final.RData')
+```
+
+## Results
+
+The final prediction algorithm used for this project was the boosing algorithm (method = 'gbm').  The overall accuracy of the model was 97.3% and the confusion matrix table is as follows: 
+
+```{r confusion, echo = F}
+library(caret)
+cm <- confusionMatrix(pred3, train$classe)
+cm$table
+```
+
+The Sensitivity, Specificity, Positive Prediction Value, Negative Prediction Value, and Precision for predicting each class (A-E) is as follows: 
+
+```{r sspnp, echo = F}
+cm$byClass[, 1:5]
+```
+
+Cross validation was conducted by using this boosting model to predict 20 exercises on the test set.  This model predicted 20/20 cases correctly.
+
+
+## Introduction and Data Wrangling
+
+This goal of this project is to predict the manner in which someone completes an exercise.  The manner in which a person completes an exercise is labeled as the 'classe' variable in the training set and it can take on the values of A, B, C, D, or E.  The training and the test sets have already been divided for this project. 
+
+The training and test sets consisted of 159 fields that included many variables that couldn't be used in the analysis due to the incompleteness of the data field.  For example, I had to remove all the column names that started with kurtosis, skewness, average, max, min, or any variable that indicated that the field was a calculated value.  The following code shows how I prepared each dataset for the follow-on analysis: 
+
+
+```{r wrangle, eval = F}
+test <- read_csv('pml-testing.csv')
+
+test <- test[, -1] %>% 
+        dplyr::select(-user_name, -new_window, -num_window, 
+                      -matches('timestamp'), 
+                      -starts_with('kurtosis'), -starts_with('skewness'), 
+                      -starts_with('max_'), -starts_with('min_'), 
+                      -starts_with('amplitude_'), -starts_with('avg_'), 
+                      -starts_with('stddev_'), -starts_with('var_'))
+
+train <- read_csv('pml_training.csv')
+train <- train %>% filter(new_window == 'no') %>% 
+        dplyr::select(-X1, -user_name, -new_window, -num_window,
+                      -matches('timestamp'), 
+                      -starts_with('kurtosis'), -starts_with('skewness'), 
+                      -starts_with('max_'), -starts_with('min_'), 
+                      -starts_with('amplitude_'), -starts_with('avg_'), 
+                      -starts_with('stddev_'), -starts_with('var_'))
+```
+
+After obtaining fields with mostly complete data values, I had to search and check for missingness.  I wrote a simple function that checked for NA values in each field and returned the location in the dataframe where the missing values existed.  In the training set only, I had to elminate the 5,270th record as that was the only record containing missing values.  The prediction algorithms in the 'caret' package require complete tidy datasets with no missing values.
+
+```{r missing, eval = F}
+apply(train, 2, function(x) which(is.na(x)))
+train <- train[-5270, ]
+```
+
+This completed the data wrangling and the data set was ready as an input to the various prediction algorithms.
+
+## Prediction Algorithms
+
+For this analysis, I completed only two types of prediction models: 
+
+1. Regression Trees with the 'rpart' method
+2. Boosting with trees using 'gbm' method
+
+The code and results of both of these methods are below: 
+
+```{r models, eval = F}
+#Regression Tree Model
+mod.rpart <- train(as.factor(classe) ~. , method = 'rpart', data = train)
+
+mod.gbm <- train(as.factor(classe) ~. , method = 'gbm', data = train)
+```
+
+Of note, the 'gbm' model took approximately 12 hours to run but returned great results.  Since the accuracy was more than 97%, I didn't consider pre-processing the data.  See the accuracy for both the Regression Tree model and the Boosting model.  Clearly, the Boosting model had a much higher accuracy rating.
+
+```{r results, eval =T}
+#Regression Tree Accuracy
+pred2 <- predict(mod.rpart, train)
+sum(pred2 == train$classe)/length(pred2)
+
+#Boosting Accuracy (BEST MODEL)
+pred3 <- predict(mod.gbm, train)
+sum(pred3 == train$classe)/length(train$classe)
+
+```
+
+The boosing model using the 'gbm' method gave me an accuracy above 97% on the training set and the complete confusion matrix is as follows:
+
+```{r confusion2}
+cm
+```
+
+Overall, the boosting model scored extremely high in all of the different statistics (Sensitivity, Specificity, Positive Prediction Value, Negative Prediction Value, and Balanced Accuracy).  For cross validation, the boosting model correctly predicted 100% (20/20) of the classes in the test set.
