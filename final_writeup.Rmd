@@ -105,4 +105,5 @@ The boosing model using the 'gbm' method gave me an accuracy above 97% on the tr
 cm
 ```
 
-Overall, the boosting model scored extremely high in all of the different statistics (Sensitivity, Specificity, Positive Prediction Value, Negative Prediction Value, and Balanced Accuracy).  For cross validation, the boosting model correctly predicted 100% (20/20) of the classes in the test set.
+# Overall performance and out-of-sample error
+Overall, the boosting model scored extremely high in all of the different statistics (Sensitivity, Specificity, Positive Prediction Value, Negative Prediction Value, and Balanced Accuracy).  The out-of-sample error rate would be expected to be a little lower than 97%.  When checking the error using the 20 test cases, this boosting model correctly predicted 100% (20/20) of the classes in the test set.
